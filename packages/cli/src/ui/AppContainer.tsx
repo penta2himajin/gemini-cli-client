@@ -233,11 +233,22 @@ export const AppContainer = (props: AppContainerProps) => {
   const { setOptions, dumpCurrentFrame, startRecording, stopRecording } =
     useContext(InkAppContext);
   const recordingFilenameRef = useRef<string | null>(null);
+
+  const isRemote = useMemo(
+    () => !!process.env['GEMINI_REMOTE_WS_URL'],
+    [],
+  );
+
   const historyManager = useHistory({
-    chatRecordingService: config.getGeminiClient()?.getChatRecordingService(),
+    chatRecordingService: isRemote
+      ? null
+      : config.getGeminiClient()?.getChatRecordingService(),
   });
 
-  useMemoryMonitor(historyManager);
+  if (!isRemote) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useMemoryMonitor(historyManager);
+  }
   const isAlternateBuffer = config.getUseAlternateBuffer();
   const [mouseMode, setMouseMode] = useState(() =>
     config.getUseAlternateBuffer(),
@@ -385,7 +396,7 @@ export const AppContainer = (props: AppContainerProps) => {
   } = useExtensionUpdates(
     extensionManager,
     historyManager.addItem,
-    config.getEnableExtensionReloading(),
+    isRemote ? false : config.getEnableExtensionReloading(),
   );
 
   const [isPermissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
@@ -482,12 +493,14 @@ export const AppContainer = (props: AppContainerProps) => {
       // Note: the program will not work if this fails so let errors be
       // handled by the global catch.
       if (!config.isInitialized()) {
-        await config.initialize();
+        await config.initialize({ lightweight: isRemote });
       }
       setConfigInitialized(true);
       startupProfiler.flush(config);
 
-      startAutoMemoryIfEnabled(config);
+      if (!isRemote) {
+        startAutoMemoryIfEnabled(config);
+      }
 
       const sessionStartSource = resumedSessionData
         ? SessionStartSource.Resume
@@ -902,7 +915,8 @@ Logging in with Google... Restarting Gemini CLI to continue.
       );
     } else if (
       settings.merged.security.auth.selectedType &&
-      !settings.merged.security.auth.useExternal
+      !settings.merged.security.auth.useExternal &&
+      !isRemote
     ) {
       // We skip validation for Gemini API key here because it might be stored
       // in the keychain, which we can't check synchronously.

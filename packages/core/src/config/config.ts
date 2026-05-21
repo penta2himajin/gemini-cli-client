@@ -1429,19 +1429,31 @@ export class Config implements McpContext, AgentLoopContext {
    * Dedups initialization requests using a shared promise that is only resolved
    * once.
    */
-  async initialize(): Promise<void> {
+  async initialize(options: { lightweight?: boolean } = {}): Promise<void> {
     if (this.initPromise) {
       return this.initPromise;
     }
 
-    this.initPromise = this._initialize();
+    this.initPromise = this._initialize(options);
 
     return this.initPromise;
   }
 
-  private async _initialize(): Promise<void> {
+  private async _initialize(
+    options: { lightweight?: boolean } = {},
+  ): Promise<void> {
     await this.storage.initialize();
     ragLogger.initialize(this.storage.getProjectTempLogsDir());
+
+    if (options.lightweight) {
+      this._promptRegistry = new PromptRegistry();
+      this._resourceRegistry = new ResourceRegistry();
+      this.agentRegistry = new AgentRegistry(this);
+      this._toolRegistry = new ToolRegistry();
+      this.memoryContextManager = new MemoryContextManager(this);
+      this.initialized = true;
+      return;
+    }
 
     // Add pending directories to workspace context
     for (const dir of this.pendingIncludeDirectories) {
