@@ -402,6 +402,17 @@ export const useAgentStream = ({
     [agent],
   );
 
+  const runRemoteCommand = useCallback(
+    async (command: string) => {
+      if (agent) {
+        await agent.send({
+          command,
+        });
+      }
+    },
+    [agent],
+  );
+
   useEffect(() => {
     if (trackedTools.length > 0) {
       const isNewBatch = !trackedTools.some((tc) =>
@@ -604,5 +615,6 @@ export const useAgentStream = ({
     retryStatus,
     dismissBackgroundTask,
     updateConfig,
+    runRemoteCommand,
   };
 };

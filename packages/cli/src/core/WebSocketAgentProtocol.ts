@@ -108,6 +108,27 @@ export class WebSocketAgentProtocol implements AgentProtocol {
       });
     }
 
+    if ('command' in payload && payload.command) {
+      const msg = JSON.stringify({
+        type: 'run_command',
+        payload: { sessionId: this.sessionId, raw: payload.command }
+      });
+
+      if (this.isConnected) {
+        this.ws.send(msg);
+      } else {
+        this.messageQueue.push(msg);
+      }
+
+      // Emit agent_start immediately
+      this.dispatchEvent({
+        id: `evt-${Date.now()}`,
+        streamId,
+        timestamp: new Date().toISOString(),
+        type: 'agent_start'
+      });
+    }
+
     if ('update' in payload && payload.update) {
       const msg = JSON.stringify({
         type: 'update_config',

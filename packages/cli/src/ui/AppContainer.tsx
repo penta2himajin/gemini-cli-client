@@ -966,6 +966,8 @@ Logging in with Google... Restarting Gemini CLI to continue.
     }) => void
   >(() => {});
 
+  const runRemoteCommandRef = useRef<(command: string) => void>(() => {});
+
   const slashCommandActions = useMemo(
     () => ({
       openAuthDialog: () => setAuthState(AuthState.Updating),
@@ -1004,8 +1006,12 @@ Logging in with Google... Restarting Gemini CLI to continue.
         }
       },
       toggleShortcutsHelp: () => setShortcutsHelpVisible((visible) => !visible),
-      updateConfig: (updates: { model?: string }) =>
-        updateConfigRef.current(updates),
+      updateConfig: (updates: {
+        model?: string;
+        memory_reload?: boolean;
+        skills_reload?: boolean;
+      }) => updateConfigRef.current(updates),
+      runRemoteCommand: (command: string) => runRemoteCommandRef.current(command),
       setText: stableSetText,
     }),
     [
@@ -1244,6 +1250,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
     dismissBackgroundTask,
     retryStatus,
     updateConfig: remoteUpdateConfig,
+    runRemoteCommand,
   } = activeStream;
 
   useEffect(() => {
@@ -1253,6 +1260,14 @@ Logging in with Google... Restarting Gemini CLI to continue.
       }
     };
   }, [remoteUpdateConfig, streamAgent]);
+
+  useEffect(() => {
+    runRemoteCommandRef.current = (command) => {
+      if (runRemoteCommand) {
+        void runRemoteCommand(command);
+      }
+    };
+  }, [runRemoteCommand, streamAgent]);
 
   const pendingHistoryItems = useMemo(
     () => [...pendingSlashCommandHistoryItems, ...pendingGeminiHistoryItems],

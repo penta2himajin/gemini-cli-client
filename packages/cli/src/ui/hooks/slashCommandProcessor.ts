@@ -93,6 +93,7 @@ interface SlashCommandProcessorActions {
     memory_reload?: boolean;
     skills_reload?: boolean;
   }) => void;
+  runRemoteCommand: (command: string) => void;
   setText: (text: string) => void;
 }
 
@@ -253,6 +254,7 @@ export const useSlashCommandProcessor = (
         toggleBackgroundTasks: actions.toggleBackgroundTasks,
         toggleShortcutsHelp: actions.toggleShortcutsHelp,
         updateConfig: actions.updateConfig,
+        runRemoteCommand: actions.runRemoteCommand,
       },
       session: {
         stats: session.stats,
@@ -414,6 +416,16 @@ export const useSlashCommandProcessor = (
           { type: MessageType.USER, text: trimmed },
           userMessageTimestamp,
         );
+      }
+
+      // Delegate to server if in remote mode and it's not a UI-only command
+      const isRemote = !!process.env['GEMINI_REMOTE_WS_URL'];
+      const uiOnlyCommands = ['theme', 'vim', 'quit', 'auth', 'editor', 'settings'];
+      
+      if (isRemote && !uiOnlyCommands.includes(commandToExecute.name)) {
+        actions.runRemoteCommand(trimmed);
+        setIsProcessing(false);
+        return { type: 'handled' };
       }
 
       let hasError = false;

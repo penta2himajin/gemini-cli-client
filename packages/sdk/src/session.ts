@@ -212,6 +212,59 @@ export class GeminiCliSession {
   }
 
   /**
+   * Run a slash command on the server.
+   *
+   * @param raw - The raw command string (e.g., "/model set gemini-1.5-pro")
+   */
+  async *runCommand(raw: string): AsyncGenerator<GeminiEvent, void, unknown> {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('/model set ')) {
+      const model = trimmed.split(' ')[2];
+      if (model) {
+        await this.updateConfig({ model });
+        yield {
+          type: 'content',
+          value: `Model updated to ${model} (via server)`,
+        };
+      }
+    } else if (trimmed === '/memory reload' || trimmed === '/memory refresh') {
+      await this.updateConfig({ memory_reload: true });
+      yield {
+        type: 'content',
+        value: 'Memory reloaded from source files on server.',
+      };
+    } else if (trimmed === '/agents reload' || trimmed === '/agents refresh') {
+      await this.updateConfig({ skills_reload: true });
+      yield {
+        type: 'content',
+        value: 'Agent skills reloaded on server.',
+      };
+    } else if (trimmed === '/clear') {
+      this.client?.setHistory([]);
+      yield {
+        type: 'content',
+        value: 'Conversation history cleared on server.',
+      };
+    } else if (trimmed === '/help' || trimmed === '?') {
+      yield {
+        type: 'content',
+        value: `Available server-side commands:
+- /model set <name>: Switch AI model
+- /memory reload: Refresh context files (GEMINI.md)
+- /agents reload: Refresh skills and agents
+- /clear: Reset conversation history
+- /help: Show this help message`,
+      };
+    } else {
+      // For unsupported commands, just return an error for now
+      yield {
+        type: 'content',
+        value: `Command "${raw}" is not yet supported for server-side execution.`,
+      };
+    }
+  }
+
+  /**
    * Send a prompt to the model and yield streaming events as they arrive.
    *
    * Handles the full agentic loop: sends the user prompt, streams model
