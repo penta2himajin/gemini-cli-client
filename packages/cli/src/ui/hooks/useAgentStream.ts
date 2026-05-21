@@ -20,7 +20,7 @@ import {
   type AgentEvent,
   type AgentProtocol,
   type Logger,
-  type Part,
+  type PartListUnion,
 } from '@google/gemini-cli-core';
 import type {
   HistoryItemWithoutId,
@@ -348,7 +348,7 @@ export const useAgentStream = ({
 
   const submitQuery = useCallback(
     async (
-      query: Part[] | string,
+      query: PartListUnion,
       options?: { isContinuation: boolean },
       _prompt_id?: string,
     ) => {
@@ -364,12 +364,18 @@ export const useAgentStream = ({
         if (typeof query === 'string') {
           addItem({ type: MessageType.USER, text: query }, timestamp);
           void logger?.logMessage(MessageSenderType.USER, query);
+        } else if (Array.isArray(query) && query.length > 0) {
+          const firstTextPart = query.find((p) => typeof p === 'object' && 'text' in p);
+          if (firstTextPart && typeof firstTextPart === 'object' && 'text' in firstTextPart) {
+            addItem({ type: MessageType.USER, text: firstTextPart.text as string }, timestamp);
+            void logger?.logMessage(MessageSenderType.USER, firstTextPart.text as string);
+          }
         }
         startNewPrompt();
       }
 
       const parts = geminiPartsToContentParts(
-        typeof query === 'string' ? [{ text: query }] : query,
+        typeof query === 'string' ? [{ text: query }] : (query as any),
       );
 
       try {

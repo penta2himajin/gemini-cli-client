@@ -2154,5 +2154,13 @@ export const useGeminiStream = (
     backgroundTasks,
     dismissBackgroundTask,
     retryStatus,
+    updateConfig: undefined as
+      | ((updates: {
+          model?: string;
+          memory_reload?: boolean;
+          skills_reload?: boolean;
+        }) => Promise<void>)
+      | undefined,
+    runRemoteCommand: undefined as ((command: string) => Promise<void>) | undefined,
   };
 };

@@ -54,8 +54,15 @@ interface AgentSendPayloads {
     displayContent?: string;
   };
   elicitations: ElicitationResponse[];
-  update: { title?: string; model?: string; config?: Record<string, unknown> };
+  update: {
+    title?: string;
+    model?: string;
+    config?: Record<string, unknown>;
+    memory_reload?: boolean;
+    skills_reload?: boolean;
+  };
   action: { type: string; data: unknown };
+  command: string;
 }
 
 export type AgentSend = RequireExactlyOne<AgentSendPayloads> & WithMeta;

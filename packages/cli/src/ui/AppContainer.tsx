@@ -2850,8 +2850,15 @@ Logging in with Google... Restarting Gemini CLI to continue.
       setVoiceModeEnabled: (value: boolean) => {
         setVoiceModeEnabled(value);
       },
-      updateConfig: (updates: { model?: string }) => {
+      updateConfig: (updates: {
+        model?: string;
+        memory_reload?: boolean;
+        skills_reload?: boolean;
+      }) => {
         updateConfigRef.current(updates);
+      },
+      runRemoteCommand: (command: string) => {
+        runRemoteCommandRef.current(command);
       },
     }),
     [

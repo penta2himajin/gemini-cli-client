@@ -602,6 +602,8 @@ const mockUIActions: UIActions = {
   getPreferredEditor: vi.fn(),
   clearAccountSuspension: vi.fn(),
   setVoiceModeEnabled: vi.fn(),
+  updateConfig: vi.fn(),
+  runRemoteCommand: vi.fn(),
 };
 
 import { type TextBuffer } from '../ui/components/shared/text-buffer.js';

@@ -286,7 +286,7 @@ export * from './services/worktreeService.js';
 export * from './voice/responseFormatter.js';
 
 // Export types from @google/genai
-export type { Content, Part, FunctionCall } from '@google/genai';
+export type { Content, Part, FunctionCall, PartListUnion } from '@google/genai';
 
 // Export context types and profiles
 export * from './context/types.js';

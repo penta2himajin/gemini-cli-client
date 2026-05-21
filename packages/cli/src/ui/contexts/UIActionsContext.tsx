@@ -97,7 +97,12 @@ export interface UIActions {
   getPreferredEditor: () => EditorType | undefined;
   clearAccountSuspension: () => void;
   setVoiceModeEnabled: (value: boolean) => void;
-  updateConfig: (updates: { model?: string }) => void;
+  updateConfig: (updates: {
+    model?: string;
+    memory_reload?: boolean;
+    skills_reload?: boolean;
+  }) => void;
+  runRemoteCommand: (command: string) => void;
 }
 
 export const UIActionsContext = createContext<UIActions | null>(null);
