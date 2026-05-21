@@ -40,6 +40,7 @@ import {
   MessageType,
   StreamingState,
   type HistoryItemInfo,
+  RECONNECT_EXIT_CODE,
 } from './types.js';
 import { checkPermissions } from './hooks/atCommandProcessor.js';
 import { ToolActionsProvider } from './contexts/ToolActionsContext.js';
@@ -493,7 +494,7 @@ export const AppContainer = (props: AppContainerProps) => {
       // Note: the program will not work if this fails so let errors be
       // handled by the global catch.
       if (!config.isInitialized()) {
-        await config.initialize({ lightweight: isRemote });
+        await config.initialize();
       }
       setConfigInitialized(true);
       startupProfiler.flush(config);
@@ -1213,7 +1214,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
   const streamAgent = useMemo(() => {
     const remoteUrl = process.env['GEMINI_REMOTE_WS_URL'];
     if (remoteUrl) {
-      return new WebSocketAgentProtocol(remoteUrl, config.getSessionId());
+      return new WebSocketAgentProtocol(remoteUrl, config);
     }
     return config?.getAgentSessionInteractiveEnabled()
       ? new LegacyAgentProtocol({ config, getPreferredEditor })
@@ -1471,17 +1472,6 @@ Logging in with Google... Restarting Gemini CLI to continue.
         (isSlash && isConfigInitialized) ||
         (!isCompressing && isIdle && isMcpOrConfigReady)
       ) {
-        if (isSlash && streamAgent) {
-          const result = await handleSlashCommand(submittedValue);
-          if (result) {
-            if (result.type === 'submit_prompt') {
-              void submitQuery(result.content);
-            }
-            addInput(submittedValue);
-            return;
-          }
-        }
-
         if (!isSlash) {
           const permissions = await checkPermissions(submittedValue, config);
           if (permissions.length > 0) {

@@ -5,6 +5,7 @@ import {
   type AgentSend,
   type Unsubscribe,
   debugLogger,
+  type Config,
 } from '@google/gemini-cli-core';
 
 interface ServerEvent {
@@ -23,13 +24,13 @@ export class WebSocketAgentProtocol implements AgentProtocol {
   
   private currentStreamId: string = `ws-stream-${Date.now()}`;
 
-  constructor(url: string, sessionId: string) {
-    this.sessionId = sessionId;
+  constructor(url: string, private config: Config) {
+    this.sessionId = config.getSessionId();
     
     // Add clientType and sessionId to URL
     const wsUrl = new URL(url);
     wsUrl.searchParams.set('clientType', 'cli');
-    wsUrl.searchParams.set('sessionId', sessionId);
+    wsUrl.searchParams.set('sessionId', this.sessionId);
 
     this.ws = new WebSocket(wsUrl.toString());
     
@@ -183,26 +184,29 @@ export class WebSocketAgentProtocol implements AgentProtocol {
 
       case 'tool_start': {
         const toolName = (serverEvent.payload.toolName as string) || 'unknown_tool';
+        const callId = (serverEvent.payload.callId as string) || `req_${Date.now()}`;
         this.dispatchEvent({
           ...baseEvent,
           type: 'tool_request',
-          requestId: `req_${Date.now()}`,
+          requestId: callId,
           name: toolName,
           args: (serverEvent.payload.args as Record<string, unknown>) || {},
-          display: { name: toolName }
+          display: serverEvent.payload.display
         } as unknown as AgentEvent);
         break;
       }
 
-      case 'tool_output':
+      case 'tool_output': {
+        const callId = (serverEvent.payload.callId as string) || `req_${Date.now()}`;
         this.dispatchEvent({
           ...baseEvent,
           type: 'tool_response',
-          requestId: `req_${Date.now()}`,
-          name: 'unknown_tool', // API Server payload missing toolName, so we mock it. 
+          requestId: callId,
+          name: 'unknown_tool', // API Server payload missing toolName, but callId is enough for tracking. 
           result: serverEvent.payload.result as string,
         } as unknown as AgentEvent);
         break;
+      }
 
       case 'turn_complete':
         this.dispatchEvent({
@@ -223,8 +227,13 @@ export class WebSocketAgentProtocol implements AgentProtocol {
         } as unknown as AgentEvent);
         break;
       
-      case 'metadata_updated':
       case 'config_updated':
+        if (serverEvent.payload.updates?.model) {
+          this.config.setModel(serverEvent.payload.updates.model);
+        }
+        break;
+
+      case 'metadata_updated':
       case 'session_list':
         // No UI action needed for these
         break;
