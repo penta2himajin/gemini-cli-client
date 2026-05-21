@@ -216,38 +216,40 @@ export class GeminiCliSession {
    *
    * @param raw - The raw command string (e.g., "/model set gemini-1.5-pro")
    */
-  async *runCommand(raw: string): AsyncGenerator<GeminiEvent, void, unknown> {
+  async *runCommand(
+    raw: string,
+  ): AsyncGenerator<ServerGeminiStreamEvent, void, unknown> {
     const trimmed = raw.trim();
     if (trimmed.startsWith('/model set ')) {
       const model = trimmed.split(' ')[2];
       if (model) {
         await this.updateConfig({ model });
         yield {
-          type: 'content',
+          type: GeminiEventType.Content,
           value: `Model updated to ${model} (via server)`,
         };
       }
     } else if (trimmed === '/memory reload' || trimmed === '/memory refresh') {
       await this.updateConfig({ memory_reload: true });
       yield {
-        type: 'content',
+        type: GeminiEventType.Content,
         value: 'Memory reloaded from source files on server.',
       };
     } else if (trimmed === '/agents reload' || trimmed === '/agents refresh') {
       await this.updateConfig({ skills_reload: true });
       yield {
-        type: 'content',
+        type: GeminiEventType.Content,
         value: 'Agent skills reloaded on server.',
       };
     } else if (trimmed === '/clear') {
       this.client?.setHistory([]);
       yield {
-        type: 'content',
+        type: GeminiEventType.Content,
         value: 'Conversation history cleared on server.',
       };
     } else if (trimmed === '/help' || trimmed === '?') {
       yield {
-        type: 'content',
+        type: GeminiEventType.Content,
         value: `Available server-side commands:
 - /model set <name>: Switch AI model
 - /memory reload: Refresh context files (GEMINI.md)
@@ -258,7 +260,7 @@ export class GeminiCliSession {
     } else {
       // For unsupported commands, just return an error for now
       yield {
-        type: 'content',
+        type: GeminiEventType.Content,
         value: `Command "${raw}" is not yet supported for server-side execution.`,
       };
     }
@@ -330,12 +332,11 @@ export class GeminiCliSession {
           const toolCall = event.value;
           let args = toolCall.args;
           if (typeof args === 'string') {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            args = JSON.parse(args);
+            args = JSON.parse(args) as Record<string, unknown>;
           }
           toolCallsToSchedule.push({
             ...toolCall,
-            args,
+            args: args as Record<string, unknown>,
             isClientInitiated: false,
             prompt_id: sessionId,
           });

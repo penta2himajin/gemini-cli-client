@@ -1449,7 +1449,11 @@ export class Config implements McpContext, AgentLoopContext {
       this._promptRegistry = new PromptRegistry();
       this._resourceRegistry = new ResourceRegistry();
       this.agentRegistry = new AgentRegistry(this);
-      this._toolRegistry = new ToolRegistry();
+      this._toolRegistry = new ToolRegistry(
+        this,
+        this.messageBus,
+        /* isMainRegistry= */ true,
+      );
       this.memoryContextManager = new MemoryContextManager(this);
       this.initialized = true;
       return;

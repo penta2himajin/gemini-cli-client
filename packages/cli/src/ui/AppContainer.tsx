@@ -1467,7 +1467,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
           const result = await handleSlashCommand(submittedValue);
           if (result) {
             if (result.type === 'submit_prompt') {
-              void submitQuery(result.content as any);
+              void submitQuery(result.content);
             }
             addInput(submittedValue);
             return;
