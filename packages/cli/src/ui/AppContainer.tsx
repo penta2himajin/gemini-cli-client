@@ -1002,6 +1002,14 @@ Logging in with Google... Restarting Gemini CLI to continue.
           process.exit(0);
         }, 100);
       },
+      reconnect: (messages: HistoryItem[]) => {
+        closeThemeDialog();
+        setQuittingMessages(messages);
+        setTimeout(async () => {
+          await runExitCleanup();
+          process.exit(RECONNECT_EXIT_CODE);
+        }, 100);
+      },
       setDebugMessage,
       toggleCorgiMode: () => setCorgiMode((prev) => !prev),
       toggleVoiceMode: () => setVoiceModeEnabled((prev) => !prev),

@@ -116,6 +116,8 @@ export interface QuitActionReturn {
   messages: HistoryItem[];
   /** When true, the current session's history and temporary files will be deleted on exit. */
   deleteSession?: boolean;
+  /** When true, signals the runner to restart with connection setup. */
+  reconnect?: boolean;
 }
 
 /**

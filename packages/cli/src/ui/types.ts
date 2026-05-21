@@ -33,6 +33,8 @@ export type {
   ToolResultDisplay,
 };
 
+export const RECONNECT_EXIT_CODE = 10;
+
 export enum AuthState {
   // Attempting to authenticate or re-authenticate
   Unauthenticated = 'unauthenticated',

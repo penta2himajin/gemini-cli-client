@@ -80,6 +80,7 @@ interface SlashCommandProcessorActions {
   ) => void;
   openPermissionsDialog: (props?: { targetDirectory?: string }) => void;
   quit: (messages: HistoryItem[]) => void;
+  reconnect: (messages: HistoryItem[]) => void;
   setDebugMessage: (message: string) => void;
   toggleCorgiMode: () => void;
   toggleVoiceMode: () => void;
@@ -587,7 +588,11 @@ export const useSlashCommandProcessor = (
                       // Don't let deletion errors prevent exit.
                     }
                   }
-                  actions.quit(result.messages);
+                  if (result.reconnect) {
+                    actions.reconnect(result.messages);
+                  } else {
+                    actions.quit(result.messages);
+                  }
                   return { type: 'handled' };
 
                 case 'submit_prompt':
