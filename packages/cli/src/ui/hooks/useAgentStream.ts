@@ -387,6 +387,21 @@ export const useAgentStream = ({
     [agent, addItem, logger, startNewPrompt],
   );
 
+  const updateConfig = useCallback(
+    async (updates: {
+      model?: string;
+      memory_reload?: boolean;
+      skills_reload?: boolean;
+    }) => {
+      if (agent) {
+        await agent.send({
+          update: updates,
+        });
+      }
+    },
+    [agent],
+  );
+
   useEffect(() => {
     if (trackedTools.length > 0) {
       const isNewBatch = !trackedTools.some((tc) =>
@@ -588,5 +603,6 @@ export const useAgentStream = ({
     backgroundTasks,
     retryStatus,
     dismissBackgroundTask,
+    updateConfig,
   };
 };

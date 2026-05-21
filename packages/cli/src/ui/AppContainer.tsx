@@ -148,6 +148,7 @@ import { useMessageQueue } from './hooks/useMessageQueue.js';
 import { useMcpStatus } from './hooks/useMcpStatus.js';
 import { useApprovalModeIndicator } from './hooks/useApprovalModeIndicator.js';
 import { useSessionStats } from './contexts/SessionContext.js';
+import { WebSocketAgentProtocol } from '../core/WebSocketAgentProtocol.js';
 import { useGitBranchName } from './hooks/useGitBranchName.js';
 import {
   useConfirmUpdateRequests,
@@ -957,6 +958,14 @@ Logging in with Google... Restarting Gemini CLI to continue.
     revealCleanUiDetailsTemporarily,
   } = useVisibilityToggle();
 
+  const updateConfigRef = useRef<
+    (updates: {
+      model?: string;
+      memory_reload?: boolean;
+      skills_reload?: boolean;
+    }) => void
+  >(() => {});
+
   const slashCommandActions = useMemo(
     () => ({
       openAuthDialog: () => setAuthState(AuthState.Updating),
@@ -995,6 +1004,8 @@ Logging in with Google... Restarting Gemini CLI to continue.
         }
       },
       toggleShortcutsHelp: () => setShortcutsHelpVisible((visible) => !visible),
+      updateConfig: (updates: { model?: string }) =>
+        updateConfigRef.current(updates),
       setText: stableSetText,
     }),
     [
@@ -1171,13 +1182,15 @@ Logging in with Google... Restarting Gemini CLI to continue.
     };
   }, [config]);
 
-  const streamAgent = useMemo(
-    () =>
-      config?.getAgentSessionInteractiveEnabled()
-        ? new LegacyAgentProtocol({ config, getPreferredEditor })
-        : undefined,
-    [config, getPreferredEditor],
-  );
+  const streamAgent = useMemo(() => {
+    const remoteUrl = process.env['GEMINI_REMOTE_WS_URL'];
+    if (remoteUrl) {
+      return new WebSocketAgentProtocol(remoteUrl, config.getSessionId());
+    }
+    return config?.getAgentSessionInteractiveEnabled()
+      ? new LegacyAgentProtocol({ config, getPreferredEditor })
+      : undefined;
+  }, [config, getPreferredEditor]);
 
   const activeStream = streamAgent
     ? // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -1230,7 +1243,16 @@ Logging in with Google... Restarting Gemini CLI to continue.
     backgroundTasks,
     dismissBackgroundTask,
     retryStatus,
+    updateConfig: remoteUpdateConfig,
   } = activeStream;
+
+  useEffect(() => {
+    updateConfigRef.current = (updates) => {
+      if (remoteUpdateConfig) {
+        void remoteUpdateConfig(updates);
+      }
+    };
+  }, [remoteUpdateConfig, streamAgent]);
 
   const pendingHistoryItems = useMemo(
     () => [...pendingSlashCommandHistoryItems, ...pendingGeminiHistoryItems],
@@ -1412,6 +1434,17 @@ Logging in with Google... Restarting Gemini CLI to continue.
         (isSlash && isConfigInitialized) ||
         (!isCompressing && isIdle && isMcpOrConfigReady)
       ) {
+        if (isSlash && streamAgent) {
+          const result = await handleSlashCommand(submittedValue);
+          if (result) {
+            if (result.type === 'submit_prompt') {
+              void submitQuery(result.content as any);
+            }
+            addInput(submittedValue);
+            return;
+          }
+        }
+
         if (!isSlash) {
           const permissions = await checkPermissions(submittedValue, config);
           if (permissions.length > 0) {
@@ -2787,6 +2820,9 @@ Logging in with Google... Restarting Gemini CLI to continue.
       },
       setVoiceModeEnabled: (value: boolean) => {
         setVoiceModeEnabled(value);
+      },
+      updateConfig: (updates: { model?: string }) => {
+        updateConfigRef.current(updates);
       },
     }),
     [

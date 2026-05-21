@@ -60,6 +60,10 @@ const reloadSubCommand: SlashCommand = {
       if (config) {
         const result = await refreshMemory(config);
 
+        if (context.ui.updateConfig) {
+          context.ui.updateConfig({ memory_reload: true });
+        }
+
         context.ui.addItem(
           {
             type: MessageType.INFO,

@@ -188,6 +188,30 @@ export class GeminiCliSession {
   }
 
   /**
+   * Update the session configuration dynamically.
+   *
+   * @param updates - An object containing the configuration properties to update.
+   */
+  async updateConfig(updates: {
+    model?: string;
+    memory_reload?: boolean;
+    skills_reload?: boolean;
+  }): Promise<void> {
+    if (updates.model) {
+      this.config.setModel(updates.model);
+      // Ensure the client is aware of the model change if it's already initialized
+      this.client?.updateSystemInstruction();
+    }
+    if (updates.memory_reload) {
+      await this.config.getMemoryContextManager()?.refresh();
+      this.client?.updateSystemInstruction();
+    }
+    if (updates.skills_reload) {
+      await this.config.reloadSkills();
+    }
+  }
+
+  /**
    * Send a prompt to the model and yield streaming events as they arrive.
    *
    * Handles the full agentic loop: sends the user prompt, streams model

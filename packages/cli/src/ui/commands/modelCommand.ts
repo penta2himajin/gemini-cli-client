@@ -39,6 +39,10 @@ const setModelCommand: SlashCommand = {
       const event = new ModelSlashCommandEvent(modelName);
       logModelSlashCommand(context.services.agentContext.config, event);
 
+      if (context.ui.updateConfig) {
+        context.ui.updateConfig({ model: modelName });
+      }
+
       context.ui.addItem({
         type: MessageType.INFO,
         text: `Model set to ${modelName}${persist ? ' (persisted)' : ''}`,

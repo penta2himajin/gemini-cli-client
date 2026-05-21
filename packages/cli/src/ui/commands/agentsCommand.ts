@@ -348,6 +348,10 @@ const agentsReloadCommand: SlashCommand = {
 
     const summary = await agentRegistry.reload();
 
+    if (context.ui.updateConfig) {
+      context.ui.updateConfig({ skills_reload: true });
+    }
+
     let content =
       summary.errors.length > 0
         ? 'Agents reloaded with errors:'

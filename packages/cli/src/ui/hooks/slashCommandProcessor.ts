@@ -88,6 +88,11 @@ interface SlashCommandProcessorActions {
   addConfirmUpdateExtensionRequest: (request: ConfirmationRequest) => void;
   toggleBackgroundTasks: () => void;
   toggleShortcutsHelp: () => void;
+  updateConfig: (updates: {
+    model?: string;
+    memory_reload?: boolean;
+    skills_reload?: boolean;
+  }) => void;
   setText: (text: string) => void;
 }
 
@@ -247,6 +252,7 @@ export const useSlashCommandProcessor = (
         removeComponent: () => setCustomDialog(null),
         toggleBackgroundTasks: actions.toggleBackgroundTasks,
         toggleShortcutsHelp: actions.toggleShortcutsHelp,
+        updateConfig: actions.updateConfig,
       },
       session: {
         stats: session.stats,

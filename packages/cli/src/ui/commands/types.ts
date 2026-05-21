@@ -93,6 +93,7 @@ export interface CommandContext {
     removeComponent: () => void;
     toggleBackgroundTasks: () => void;
     toggleShortcutsHelp: () => void;
+    updateConfig?: (updates: { model?: string }) => void;
   };
   // Session-specific data
   session: {
