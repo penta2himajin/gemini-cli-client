@@ -222,10 +222,13 @@ export class GeminiCliSession {
    * Run a slash command on the server.
    *
    * @param raw - The raw command string (e.g., "/model set gemini-1.5-pro")
+   * @param signal - An optional abort signal to cancel the command.
    */
   async *runCommand(
     raw: string,
+    signal?: AbortSignal,
   ): AsyncGenerator<ServerGeminiStreamEvent, void, unknown> {
+    if (signal?.aborted) return;
     const trimmed = raw.trim();
     if (trimmed.startsWith('/model set ')) {
       const model = trimmed.split(' ')[2];

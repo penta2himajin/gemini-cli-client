@@ -146,7 +146,14 @@ export class WebSocketAgentProtocol implements AgentProtocol {
   }
 
   async abort(): Promise<void> {
-    // Currently unsupported by the simple API server
+    const msg = JSON.stringify({
+      type: 'abort',
+      payload: { sessionId: this.sessionId }
+    });
+
+    if (this.isConnected) {
+      this.ws.send(msg);
+    }
   }
 
   private dispatchEvent(event: AgentEvent) {

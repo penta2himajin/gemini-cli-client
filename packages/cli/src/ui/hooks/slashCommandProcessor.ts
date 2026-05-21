@@ -421,7 +421,15 @@ export const useSlashCommandProcessor = (
 
       // Delegate to server if in remote mode and it's not a UI-only command
       const isRemote = !!process.env['GEMINI_REMOTE_WS_URL'];
-      const uiOnlyCommands = ['theme', 'vim', 'quit', 'auth', 'editor', 'settings'];
+      const uiOnlyCommands = [
+        'theme',
+        'vim',
+        'quit',
+        'auth',
+        'editor',
+        'settings',
+        'connection',
+      ];
       
       if (isRemote && !uiOnlyCommands.includes(commandToExecute.name)) {
         actions.runRemoteCommand(trimmed);
