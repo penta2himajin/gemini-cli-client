@@ -230,13 +230,20 @@ export class GeminiCliSession {
   ): AsyncGenerator<ServerGeminiStreamEvent, void, unknown> {
     if (signal?.aborted) return;
     const trimmed = raw.trim();
-    if (trimmed.startsWith('/model set ')) {
-      const model = trimmed.split(' ')[2];
-      if (model) {
+    if (trimmed.startsWith('/model')) {
+      const parts = trimmed.split(' ');
+      if (parts[1] === 'set' && parts[2]) {
+        const model = parts[2];
         await this.updateConfig({ model });
         yield {
           type: GeminiEventType.Content,
           value: `Model updated to ${model} (via server)`,
+        };
+      } else {
+        const currentModel = this.config.getModel();
+        yield {
+          type: GeminiEventType.Content,
+          value: `Current model: ${currentModel}\nUse "/model set <name>" to change it.`,
         };
       }
     } else if (trimmed === '/memory reload' || trimmed === '/memory refresh') {

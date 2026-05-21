@@ -1491,6 +1491,16 @@ Logging in with Google... Restarting Gemini CLI to continue.
             return;
           }
         }
+
+        const result = await handleSlashCommand(submittedValue);
+        if (result) {
+          if (result.type === 'submit_prompt') {
+            void submitQuery(result.content);
+          }
+          addInput(submittedValue);
+          return;
+        }
+
         void submitQuery(submittedValue);
       } else {
         // Check messageQueue.length === 0 to only notify on the first queued item
