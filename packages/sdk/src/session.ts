@@ -212,6 +212,13 @@ export class GeminiCliSession {
   }
 
   /**
+   * Get the current conversation history.
+   */
+  getHistory(): readonly Content[] {
+    return this.client?.getHistory() || [];
+  }
+
+  /**
    * Run a slash command on the server.
    *
    * @param raw - The raw command string (e.g., "/model set gemini-1.5-pro")
