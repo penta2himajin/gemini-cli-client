@@ -13,7 +13,6 @@ import {
   type SerializableConfirmationDetails,
   type Config,
   type ToolConfirmationPayload,
-  ToolConfirmationOutcome,
   type EditorType,
   ApprovalMode,
   hasRedirection,
@@ -35,8 +34,6 @@ import { themeManager } from '../../themes/theme-manager.js';
 import { useSettings } from '../../contexts/SettingsContext.js';
 import { Command } from '../../key/keyMatchers.js';
 import { formatCommand } from '../../key/keybindingUtils.js';
-import { AskUserDialog } from '../AskUserDialog.js';
-import { ExitPlanModeDialog } from '../ExitPlanModeDialog.js';
 import { WarningMessage } from './WarningMessage.js';
 import { colorizeCode } from '../../utils/CodeColorizer.js';
 import {
@@ -46,6 +43,7 @@ import {
 } from '../../utils/urlSecurityUtils.js';
 import { useKeyMatchers } from '../../hooks/useKeyMatchers.js';
 import { isShellTool } from './ToolShared.js';
+import { ToolConfirmationOutcome } from '@google/gemini-cli-core';
 
 export interface ToolConfirmationMessageProps {
   callId: string;
@@ -546,17 +544,12 @@ export const ToolConfirmationMessage: React.FC<
 
       if (confirmationDetails.type === 'ask_user') {
         bodyContent = (
-          <AskUserDialog
-            questions={confirmationDetails.questions}
-            onSubmit={(answers) => {
-              handleConfirm(ToolConfirmationOutcome.ProceedOnce, { answers });
-            }}
-            onCancel={() => {
-              handleConfirm(ToolConfirmationOutcome.Cancel);
-            }}
-            width={terminalWidth}
-            availableHeight={bodyHeight}
-          />
+          <Box flexDirection="column" padding={1} borderStyle="round" borderColor={theme.border.default}>
+            <Text color={theme.status.warning}>
+              Interactive questions are now handled by the server. 
+              Please check your Web UI or remote connection for the interactive prompt.
+            </Text>
+          </Box>
         );
         return {
           question: '',
@@ -569,27 +562,12 @@ export const ToolConfirmationMessage: React.FC<
 
       if (confirmationDetails.type === 'exit_plan_mode') {
         bodyContent = (
-          <ExitPlanModeDialog
-            planPath={confirmationDetails.planPath}
-            getPreferredEditor={getPreferredEditor}
-            onApprove={(approvalMode) => {
-              handleConfirm(ToolConfirmationOutcome.ProceedOnce, {
-                approved: true,
-                approvalMode,
-              });
-            }}
-            onFeedback={(feedback) => {
-              handleConfirm(ToolConfirmationOutcome.ProceedOnce, {
-                approved: false,
-                feedback,
-              });
-            }}
-            onCancel={() => {
-              handleConfirm(ToolConfirmationOutcome.Cancel);
-            }}
-            width={terminalWidth}
-            availableHeight={bodyHeight}
-          />
+          <Box flexDirection="column" padding={1} borderStyle="round" borderColor={theme.border.default}>
+            <Text color={theme.status.warning}>
+              Plan Mode approval is now handled by the server.
+              Please review and approve the plan via the Web UI.
+            </Text>
+          </Box>
         );
         return {
           question: '',

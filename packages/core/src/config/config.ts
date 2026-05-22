@@ -1565,6 +1565,22 @@ export class Config implements McpContext, AgentLoopContext {
     baseUrl?: string,
     customHeaders?: Record<string, string>,
   ) {
+    const isRemote = !!process.env['GEMINI_REMOTE_WS_URL'];
+    if (isRemote) {
+      // In remote mode, we don't need a local content generator or auth.
+      // We set a skeletal config and dummy generator to keep the UI happy.
+      this.contentGeneratorConfig = {
+        authType: authMethod,
+      } as any;
+      this.contentGenerator = {
+        generateContent: () => Promise.reject(new Error('Local inference disabled')),
+        generateContentStream: () => Promise.reject(new Error('Local inference disabled')),
+        countTokens: () => Promise.resolve({ totalTokens: 0 }),
+        embedContent: () => Promise.reject(new Error('Local inference disabled')),
+      } as any;
+      this.baseLlmClient = new BaseLlmClient(this.contentGenerator, this);
+      return;
+    }
     // Reset availability service when switching auth
     this.modelAvailabilityService.reset();
 

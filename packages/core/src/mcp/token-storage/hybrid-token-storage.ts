@@ -5,93 +5,32 @@
  */
 
 import { BaseTokenStorage } from './base-token-storage.js';
-import { KeychainTokenStorage } from './keychain-token-storage.js';
-import {
-  TokenStorageType,
-  type TokenStorage,
-  type OAuthCredentials,
-} from './types.js';
-import { coreEvents } from '../../utils/events.js';
-import { TokenStorageInitializationEvent } from '../../telemetry/types.js';
-import { FORCE_FILE_STORAGE_ENV_VAR } from '../../services/keychainService.js';
+import type { OAuthCredentials } from './types.js';
 
 export class HybridTokenStorage extends BaseTokenStorage {
-  private storage: TokenStorage | null = null;
-  private storageType: TokenStorageType | null = null;
-  private storageInitPromise: Promise<TokenStorage> | null = null;
-
   constructor(serviceName: string) {
     super(serviceName);
   }
 
-  private async initializeStorage(): Promise<TokenStorage> {
-    const forceFileStorage = process.env[FORCE_FILE_STORAGE_ENV_VAR] === 'true';
-
-    const keychainStorage = new KeychainTokenStorage(this.serviceName);
-    this.storage = keychainStorage;
-
-    const isUsingFileFallback = await keychainStorage.isUsingFileFallback();
-
-    this.storageType = isUsingFileFallback
-      ? TokenStorageType.ENCRYPTED_FILE
-      : TokenStorageType.KEYCHAIN;
-
-    coreEvents.emitTelemetryTokenStorageType(
-      new TokenStorageInitializationEvent(
-        isUsingFileFallback ? 'encrypted_file' : 'keychain',
-        forceFileStorage,
-      ),
-    );
-
-    return this.storage;
+  async getCredentials(_serverName: string): Promise<OAuthCredentials | null> {
+    return null;
   }
 
-  private async getStorage(): Promise<TokenStorage> {
-    if (this.storage !== null) {
-      return this.storage;
-    }
+  async setCredentials(_credentials: OAuthCredentials): Promise<void> {}
 
-    // Use a single initialization promise to avoid race conditions
-    if (!this.storageInitPromise) {
-      this.storageInitPromise = this.initializeStorage();
-    }
-
-    // Wait for initialization to complete
-    return this.storageInitPromise;
-  }
-
-  async getCredentials(serverName: string): Promise<OAuthCredentials | null> {
-    const storage = await this.getStorage();
-    return storage.getCredentials(serverName);
-  }
-
-  async setCredentials(credentials: OAuthCredentials): Promise<void> {
-    const storage = await this.getStorage();
-    await storage.setCredentials(credentials);
-  }
-
-  async deleteCredentials(serverName: string): Promise<void> {
-    const storage = await this.getStorage();
-    await storage.deleteCredentials(serverName);
-  }
+  async deleteCredentials(_serverName: string): Promise<void> {}
 
   async listServers(): Promise<string[]> {
-    const storage = await this.getStorage();
-    return storage.listServers();
+    return [];
   }
 
   async getAllCredentials(): Promise<Map<string, OAuthCredentials>> {
-    const storage = await this.getStorage();
-    return storage.getAllCredentials();
+    return new Map();
   }
 
-  async clearAll(): Promise<void> {
-    const storage = await this.getStorage();
-    await storage.clearAll();
-  }
+  async clearAll(): Promise<void> {}
 
-  async getStorageType(): Promise<TokenStorageType> {
-    await this.getStorage();
-    return this.storageType!;
+  async getStorageType(): Promise<any> {
+    return null;
   }
 }

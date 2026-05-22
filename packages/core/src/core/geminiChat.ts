@@ -376,6 +376,12 @@ export class GeminiChat {
     role: LlmRole,
     displayContent?: PartListUnion,
   ): Promise<AsyncGenerator<StreamEvent>> {
+    const isRemote = !!process.env['GEMINI_REMOTE_WS_URL'];
+    if (isRemote) {
+      throw new Error(
+        'GeminiChat.sendMessageStream called in remote mode. This should be handled by the remote protocol.',
+      );
+    }
     await this.sendPromise;
 
     let streamDoneResolver: () => void;

@@ -150,7 +150,13 @@ describe('useSessionBrowser', () => {
       id: MOCKED_SESSION_ID,
       fileName: MOCKED_FILENAME,
     } as SessionInfo;
-    vi.mocked(loadConversationRecord).mockResolvedValue(null);
+    vi.mocked(loadConversationRecord).mockResolvedValue({
+      sessionId: '',
+      projectHash: '',
+      startTime: '',
+      lastUpdated: '',
+      messages: [],
+    });
 
     const { result } = await renderHook(() =>
       useSessionBrowser(mockConfig, mockOnLoadHistory),

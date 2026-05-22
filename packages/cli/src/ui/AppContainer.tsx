@@ -51,8 +51,6 @@ import {
   type Config,
   type IdeInfo,
   type IdeContext,
-  type UserTierId,
-  type GeminiUserTier,
   type UserFeedbackPayload,
   type HookSystemMessagePayload,
   type AgentDefinition,
@@ -98,8 +96,6 @@ import process from 'node:process';
 import { useHistory } from './hooks/useHistoryManager.js';
 import { useMemoryMonitor } from './hooks/useMemoryMonitor.js';
 import { useThemeCommand } from './hooks/useThemeCommand.js';
-import { useAuthCommand } from './auth/useAuth.js';
-import { useQuotaAndFallback } from './hooks/useQuotaAndFallback.js';
 import { useEditorSettings } from './hooks/useEditorSettings.js';
 import { useSettingsCommand } from './hooks/useSettingsCommand.js';
 import { useModelCommand } from './hooks/useModelCommand.js';
@@ -451,7 +447,6 @@ export const AppContainer = (props: AppContainerProps) => {
 
   const [currentModel, setCurrentModel] = useState(config.getModel());
 
-  const [userTier, setUserTier] = useState<UserTierId | undefined>(undefined);
   const [quotaStats, setQuotaStats] = useState<QuotaStats | undefined>(() => {
     const remaining = config.getQuotaRemaining();
     const limit = config.getQuotaLimit();
@@ -462,9 +457,12 @@ export const AppContainer = (props: AppContainerProps) => {
       ? { remaining, limit, resetTime }
       : undefined;
   });
-  const [paidTier, setPaidTier] = useState<GeminiUserTier | undefined>(
-    undefined,
-  );
+
+  const proQuotaRequest = null;
+  const validationRequest = null;
+  const overageMenuRequest = null;
+  const emptyWalletRequest = null;
+  const apiKeyDefaultValue = undefined;
 
   const [isConfigInitialized, setConfigInitialized] = useState(false);
 
@@ -731,21 +729,28 @@ export const AppContainer = (props: AppContainerProps) => {
   );
   // Poll for terminal background color changes to auto-switch theme
   useTerminalTheme(handleThemeSelect, config, refreshStatic);
-  const {
-    authState,
-    setAuthState,
-    authError,
-    onAuthError,
-    apiKeyDefaultValue,
-    reloadApiKey,
-    accountSuspensionInfo,
-    setAccountSuspensionInfo,
-  } = useAuthCommand(
-    settings,
-    config,
-    initializationResult.authError,
-    initializationResult.accountSuspensionInfo,
+
+  const [authState, setAuthState] = useState<AuthState>(
+    isRemote
+      ? AuthState.Authenticated
+      : initializationResult.authError
+        ? AuthState.Unauthenticated
+        : AuthState.Authenticated,
   );
+  const [authError, setAuthError] = useState<string | null>(
+    initializationResult.authError || null,
+  );
+  const [accountSuspensionInfo, setAccountSuspensionInfo] = useState<
+    any | null
+  >(initializationResult.accountSuspensionInfo);
+
+  const onAuthError = useCallback((error: string | null) => {
+    setAuthError(error);
+    if (error) {
+      setAuthState(AuthState.Unauthenticated);
+    }
+  }, []);
+
   const [authContext, setAuthContext] = useState<{ requiresRestart?: boolean }>(
     {},
   );
@@ -757,33 +762,16 @@ export const AppContainer = (props: AppContainerProps) => {
     }
   }, [authState, authContext, setAuthState]);
 
-  const {
-    proQuotaRequest,
-    handleProQuotaChoice,
-    validationRequest,
-    handleValidationChoice,
-    // G1 AI Credits
-    overageMenuRequest,
-    handleOverageMenuChoice,
-    emptyWalletRequest,
-    handleEmptyWalletChoice,
-  } = useQuotaAndFallback({
-    config,
-    historyManager,
-    userTier,
-    paidTier,
-    settings,
-    setModelSwitchedFromQuotaError,
-    onShowAuthSelection: () => setAuthState(AuthState.Updating),
-    errorVerbosity: settings.merged.ui.errorVerbosity,
-  });
+  // Placeholder functions for removed functionality
+  const reloadApiKey = useCallback(() => {}, []);
+  const handleProQuotaChoice = useCallback(() => {}, []);
+  const handleValidationChoice = useCallback(() => {}, []);
+  const handleOverageMenuChoice = useCallback(() => {}, []);
+  const handleEmptyWalletChoice = useCallback(() => {}, []);
 
   // Derive auth state variables for backward compatibility with UIStateContext
   const isAuthDialogOpen = authState === AuthState.Updating;
-  // TODO: Consider handling other auth types that should also skip the blocking screen
-  const isAuthenticating =
-    authState === AuthState.Unauthenticated &&
-    settings.merged.security.auth.selectedType !== AuthType.USE_GEMINI;
+  const isAuthenticating = authState === AuthState.Unauthenticated;
 
   // Session browser and resume functionality
   const isGeminiClientInitialized = config.getGeminiClient()?.isInitialized();
@@ -893,15 +881,6 @@ Logging in with Google... Restarting Gemini CLI to continue.
     // Go back to auth method selection
     setAuthState(AuthState.Updating);
   }, [setAuthState]);
-
-  // Sync user tier from config when authentication changes
-  useEffect(() => {
-    // Only sync when not currently authenticating
-    if (authState === AuthState.Authenticated) {
-      setUserTier(config.getUserTier());
-      setPaidTier(config.getUserPaidTier());
-    }
-  }, [config, authState]);
 
   // Check for enforced auth type mismatch
   useEffect(() => {
@@ -2496,7 +2475,6 @@ Logging in with Google... Restarting Gemini CLI to continue.
 
   const quotaState = useMemo(
     () => ({
-      userTier,
       stats: quotaStats,
       proQuotaRequest,
       validationRequest,
@@ -2505,7 +2483,6 @@ Logging in with Google... Restarting Gemini CLI to continue.
       emptyWalletRequest,
     }),
     [
-      userTier,
       quotaStats,
       proQuotaRequest,
       validationRequest,
@@ -2532,7 +2509,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       apiKeyDefaultValue,
       editorError,
       isEditorDialogOpen,
-      showPrivacyNotice,
+      showPrivacyNotice: false,
       mouseMode,
       corgiMode,
       debugMessage,
@@ -2551,7 +2528,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       pendingSlashCommandHistoryItems,
       commandContext,
       commandConfirmationRequest,
-      authConsentRequest,
+      authConsentRequest: null,
       confirmUpdateExtensionRequests,
       loopDetectionConfirmationRequest,
       permissionConfirmationRequest,

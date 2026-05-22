@@ -130,6 +130,12 @@ export class BaseLlmClient {
   async generateJson(
     options: GenerateJsonOptions,
   ): Promise<Record<string, unknown>> {
+    const isRemote = !!process.env['GEMINI_REMOTE_WS_URL'];
+    if (isRemote) {
+      throw new Error(
+        'BaseLlmClient.generateJson called in remote mode. This should be handled by the remote protocol.',
+      );
+    }
     const {
       schema,
       modelConfigKey,
@@ -256,6 +262,12 @@ export class BaseLlmClient {
   async generateContent(
     options: GenerateContentOptions,
   ): Promise<GenerateContentResponse> {
+    const isRemote = !!process.env['GEMINI_REMOTE_WS_URL'];
+    if (isRemote) {
+      throw new Error(
+        'BaseLlmClient.generateContent called in remote mode. This should be handled by the remote protocol.',
+      );
+    }
     const {
       modelConfigKey,
       contents,

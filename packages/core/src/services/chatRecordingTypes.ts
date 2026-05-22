@@ -97,6 +97,11 @@ export interface ConversationRecord {
   messages: MessageRecord[];
   summary?: string;
   memoryScratchpad?: MemoryScratchpad;
+  userMessageCount?: number;
+  messageCount?: number;
+  firstUserMessage?: string;
+  hasUserOrAssistantMessage?: boolean;
+  memoryScratchpadIsStale?: boolean;
   /** Workspace directories added during the session via /dir add */
   directories?: string[];
   /** The kind of conversation (main agent or subagent) */
